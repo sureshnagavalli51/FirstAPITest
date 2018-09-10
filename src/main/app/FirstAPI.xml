@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/apikit http://www.mulesoft.org/schema/mule/apikit/current/mule-apikit.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.1.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <http:listener-config name="FirstAPI-httpListenerConfig" host="0.0.0.0" port="8081" doc:name="HTTP Listener Configuration"/>
+    <apikit:config name="FirstAPI-config" raml="FirstAPI.raml" consoleEnabled="false" doc:name="Router"/>
+    <db:oracle-config name="Oracle_Configuration" host="localhost" port="1521" instance="orcl" user="scott" password="tiger" doc:name="Oracle Configuration"/>
+    <spring:beans>
+        <spring:import resource="classpath:securityutils.xml"/>
+    </spring:beans>
+    <flow name="FirstAPI-main">
+        <http:listener config-ref="FirstAPI-httpListenerConfig" path="/api/*" doc:name="HTTP"/>
+        <apikit:router config-ref="FirstAPI-config" doc:name="APIkit Router"/>
+        <exception-strategy ref="FirstAPI-apiKitGlobalExceptionMapping" doc:name="Reference Exception Strategy"/>
+    </flow>
+    <flow name="FirstAPI-console">
+        <http:listener config-ref="FirstAPI-httpListenerConfig" path="/console/*" doc:name="HTTP"/>
+        <apikit:console config-ref="FirstAPI-config" doc:name="APIkit Console"/>
+    </flow>
+    <flow name="post:/CreateEmployee:FirstAPI-config">
+        <json:json-to-object-transformer returnClass="java.util.HashMap" doc:name="JSON to Object"/>
+        <set-variable variableName="initialData" value="#[payload]" doc:name="initialData"/>
+        <logger message="Capture the data #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="LogRequestData"/>
+        <flow-ref name="Encryption_Sub_Flow" doc:name="Flow Reference"/>
+        <db:insert config-ref="Oracle_Configuration" doc:name="Database">
+            <db:parameterized-query><![CDATA[insert into encry(empid,request,lastupdatetime)values(#[flowVars.initialData.empid],#[flowVars.encryptedData],current_timestamp)]]></db:parameterized-query>
+        </db:insert>
+        <set-payload value="{&#xA;&quot;status&quot; : &quot;Success&quot;,&#xA;&quot;errorMessage&quot; : &quot;successfully inserted into DB&quot;,&#xA;&quot;errorCode&quot; : &quot;200&quot;&#xA;}" doc:name="Set Payload"/>
+    </flow>
+    <apikit:mapping-exception-strategy name="FirstAPI-apiKitGlobalExceptionMapping">
+        <apikit:mapping statusCode="404">
+            <apikit:exception value="org.mule.module.apikit.exception.NotFoundException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Resource not found&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="405">
+            <apikit:exception value="org.mule.module.apikit.exception.MethodNotAllowedException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Method not allowed&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="415">
+            <apikit:exception value="org.mule.module.apikit.exception.UnsupportedMediaTypeException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Unsupported media type&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="406">
+            <apikit:exception value="org.mule.module.apikit.exception.NotAcceptableException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Not acceptable&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+        <apikit:mapping statusCode="400">
+            <apikit:exception value="org.mule.module.apikit.exception.BadRequestException" />
+            <set-property propertyName="Content-Type" value="application/json" doc:name="Property"/>
+            <set-payload value="{ &quot;message&quot;: &quot;Bad request&quot; }" doc:name="Set Payload"/>
+        </apikit:mapping>
+    </apikit:mapping-exception-strategy>
+</mule>

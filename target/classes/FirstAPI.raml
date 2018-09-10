@@ -1,0 +1,51 @@
+#%RAML 1.0
+title: FirstAPI
+baseUri: https://mocksvc.mulesoft.com/mocks/e3267ae1-c5e2-42e4-8e28-68551f5ac843/firstapi # baseUri: https://mocksvc.mulesoft.com/mocks/a5d01a8d-917a-44e4-9e6b-690b3c15e389/firstapi #
+version: 1.0
+mediaType: application/json
+protocols: [HTTP,HTTPS]
+
+/CreateEmployee:
+ description: 
+ post:
+   description: 
+   body: 
+     application/json:
+       example:
+        {
+         "empid":111,
+         "fullname":"venu",
+         "salary":100000
+        }
+   responses: 
+     200:
+      body: 
+       application/json:
+          example:
+           {
+            "status":"Success",
+            "errorMessage":"successfully inserted into DB",
+            "errorCode":"200"
+           }
+     400:
+       body: 
+        application/json:
+          example:
+           {
+            "status":"Faiure",
+            "errorMessage":"not inserted into DB",
+            "errorCode":"400"
+           }
+     500:
+       body: 
+        application/json:
+          example:
+           {
+            "status":"Faiure",
+            "errorMessage":"not inserted into DB",
+            "errorCode":"500"
+           }            
+   
+   
+
+   
