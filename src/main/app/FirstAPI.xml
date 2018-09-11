@@ -25,6 +25,7 @@ http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/cu
         <set-variable variableName="initialData" value="#[payload]" doc:name="initialData"/>
         <logger message="Capture the data #[message.payloadAs(java.lang.String)]" level="INFO" doc:name="LogRequestData"/>
         <logger message="Log Request Data Again" level="INFO" doc:name="LogRequestDataAgain"/>
+        <logger message="NewLogger" level="INFO" doc:name="NewLogger"/>
         <flow-ref name="Encryption_Sub_Flow" doc:name="Flow Reference"/>
         <db:insert config-ref="Oracle_Configuration" doc:name="Database">
             <db:parameterized-query><![CDATA[insert into encry(empid,request,lastupdatetime)values(#[flowVars.initialData.empid],#[flowVars.encryptedData],current_timestamp)]]></db:parameterized-query>
